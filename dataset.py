@@ -116,7 +116,7 @@ def get_data_loaders(root, frame_in, is_sequential, batch_size, transform = None
 
 
 if __name__ == "__main__":
-    root = "Dataset/Dataset"
+    root = "D:\\thang\\20232\\Dataset"
     train = True
     # transform = A.Compose([
     #     A.Resize(288, 512, p = 1),

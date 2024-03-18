@@ -44,7 +44,7 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
 
         # Update parameters.
         optimizer.step()
-
+        print(epoch)
         # Calculate and accumulate accuracy metric across all batches
         if batch % 100 == 0:
             preds = logits.clone().detach()
@@ -160,7 +160,7 @@ def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoade
     results = {'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': []}
     for epoch in range(epochs):
         print(f"Epoch: {epoch+1}")
-        train_loss, train_acc = train_step(model, train_loader, optimizer, criterion, device)
+        train_loss, train_acc = train_step(model, train_loader, optimizer, criterion, epoch, device)
         # test_loss, test_acc = test_step(model, test_loader, criterion, device)
 
         # Print result

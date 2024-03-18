@@ -15,7 +15,7 @@ import argparse
 
 def get_opt():
     parser = argparse.ArgumentParser(description='Train a TrackNetV2 model')
-    parser.add_argument('--root', type=str, default='Dataset/Dataset', help='Path to the root directory of the dataset')
+    parser.add_argument('--root', type=str, default='D:/thang/20232/Dataset/Dataset', help='Path to the root directory of the dataset')
     parser.add_argument('--frame_in', type=int, default=3, help='Number of input frames')
     parser.add_argument('--is_sequential', type=bool, default=True, help='Whether the input frames are sequential')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
@@ -49,14 +49,14 @@ if __name__ == "__main__":
                                 lr = opt.learning_rate)
     
     train_with_writer(model = net,
-                train_loader = train_dataloader,
-                test_loader = test_dataloader,
-                criterion = loss_fn,
-                optimizer = optimizer,
-                epochs = opt.num_epochs,
-                device = opt.device,
-                experiment_name = opt.experiment_name,
-                model_name = opt.model_name)
+                      train_loader = train_dataloader,
+                      test_loader = test_dataloader,
+                      optimizer = optimizer,
+                      experiment_name = opt.experiment_name,
+                      model_name = opt.model_name,
+                      criterion = loss_fn,
+                      epochs = opt.num_epochs,
+                      device = opt.device)
     
     save_model(model=net,
                target_dir=opt.model_save_dir,
