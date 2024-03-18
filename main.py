@@ -25,7 +25,7 @@ def get_opt():
     parser.add_argument('--experiment_name', type=str, default='tennis', help='Name of the experiment')
     parser.add_argument('--device', type=str, default="cuda" if torch.cuda.is_available() else "cpu", help='Device to train the model on')
     parser.add_argument('--model_save_dir', type=str, default='models', help='Directory to save the model')
-    parser.add_argument('--weight_intit', action='store_true', help='Whether to use weight initialization')
+    parser.add_argument('--weight_init', action='store_true', help='Whether to use weight initialization')
     parser.add_argument('--NUM_WORKERS', type=int, default=2, help='Number of workers for the DataLoader')
     opt = parser.parse_args()
     return opt
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     )
 
     net = TrackNetV2(in_channels = opt.frame_in * 3, out_channels = opt.frame_in).to(opt.device)
-    if opt.weight_intit:
+    if opt.weight_init:
         net.apply(weight_init)
     
     loss_fn = FocalLoss(gamma = 2)

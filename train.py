@@ -44,6 +44,8 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
 
         # Update parameters.
         optimizer.step()
+        optimizer.zero_grad()
+        
         # Calculate and accumulate accuracy metric across all batches
         if batch % 100 == 0:
             preds = logits.clone().detach()
