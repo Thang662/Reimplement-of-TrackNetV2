@@ -64,7 +64,7 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
             plt.imshow(hm_th)
             plt.subplot(3, 2, 6)
             plt.imshow(heatmaps[0][2].cpu().numpy())
-            plt.savefig(f"hm_hm_{batch}_{epoch}.png")
+            plt.savefig(f"hm/hm_{batch}_{epoch}.png")
 
 
             
