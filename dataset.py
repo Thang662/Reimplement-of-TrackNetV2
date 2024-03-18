@@ -79,7 +79,7 @@ class Tennis(Dataset):
             img = cv2.imread(path)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             if vis:
-                transformed = self.transform(image = img, keypoints = [keypoint])
+                transformed = self.transform(image = img, keypoints = [(keypoint[0] - 0.1, keypoint[1] - 0.1)])
                 keypoint_transformed = transformed['keypoints']
             else:
                 transformed = self.transform(image = img, keypoints = [[0, 0]])
@@ -109,14 +109,14 @@ class Tennis(Dataset):
 def get_data_loaders(root, frame_in, is_sequential, batch_size, transform = None, NUM_WORKERS = os.cpu_count()):
     train_dataset = Tennis(root = root, train = True, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
     test_dataset = Tennis(root = root, train = False, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
-    train_loader = DataLoader(train_dataset, batch_size = batch_size, num_workers = NUM_WORKERS, shuffle = False)
+    train_loader = DataLoader(train_dataset, batch_size = batch_size, num_workers = NUM_WORKERS, shuffle = True)
     test_loader = DataLoader(test_dataset, batch_size = batch_size, num_workers = NUM_WORKERS, shuffle = False)
     return train_loader, test_loader
     
 
 
 if __name__ == "__main__":
-    root = "D:\\thang\\20232\\Dataset"
+    root = "D:\\thang\\20232\\Dataset\\Dataset"
     train = True
     # transform = A.Compose([
     #     A.Resize(288, 512, p = 1),
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     frame_in = 3
     is_sequential = False
     dataset = Tennis(root, train = train, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
-    dataset[200]
+    # dataset[200]
     train_loader, test_loader = get_data_loaders(root = root, transform = transform, frame_in = frame_in, is_sequential = is_sequential, batch_size = 2, NUM_WORKERS = 2)
     for i, (imgs, heat_maps, annos, annos_transformed) in enumerate(train_loader):
         # print(imgs, heat_maps, annos, annos_transformed)
