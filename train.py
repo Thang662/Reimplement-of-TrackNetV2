@@ -127,7 +127,7 @@ def train(model: nn.Module, train_loader: torch.utils.data.DataLoader, test_load
     results = {'train_loss': [], 'train_acc': [], 'test_loss': [], 'test_acc': []}
     for epoch in range(epochs):
         print(f"Epoch: {epoch+1}")
-        train_loss, train_acc = train_step(model, train_loader, optimizer, criterion, epoch, device)
+        train_loss, train_acc = train_step(model, train_loader, optimizer, criterion, epoch = epoch, device = device)
         test_loss, test_acc = test_step(model, test_loader, criterion, device)
 
         # Print result
