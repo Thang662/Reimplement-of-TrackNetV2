@@ -36,7 +36,7 @@ if __name__ == "__main__":
         root = opt.root,
         frame_in = opt.frame_in,
         is_sequential = opt.is_sequential,
-        batch_size = 2,
+        batch_size = opt.batch_size,
         NUM_WORKERS = opt.NUM_WORKERS
     )
 
