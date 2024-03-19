@@ -15,7 +15,7 @@ import argparse
 
 def get_opt():
     parser = argparse.ArgumentParser(description='Train a TrackNetV2 model')
-    parser.add_argument('--root', type=str, default='D:/thang/20232/Dataset/Dataset', help='Path to the root directory of the dataset')
+    parser.add_argument('--root', type=str, default='D:/thang/20232/thesis/Dataset/Dataset', help='Path to the root directory of the dataset')
     parser.add_argument('--frame_in', type=int, default=3, help='Number of input frames')
     parser.add_argument('--is_sequential', type=bool, default=True, help='Whether the input frames are sequential')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
@@ -36,11 +36,11 @@ if __name__ == "__main__":
         root = opt.root,
         frame_in = opt.frame_in,
         is_sequential = opt.is_sequential,
-        batch_size = opt.batch_size,
+        batch_size = 2,
         NUM_WORKERS = opt.NUM_WORKERS
     )
 
-    net = TrackNetV2(in_channels = opt.frame_in * 3, out_channels = opt.frame_in).to(opt.device)
+    net = TrackNetV2(opt.frame_in * 3,  opt.frame_in).to(opt.device)
     if opt.weight_init:
         net.apply(weight_init)
     
@@ -58,9 +58,9 @@ if __name__ == "__main__":
                       epochs = opt.num_epochs,
                       device = opt.device)
     
-    save_model(model=net,
-               target_dir=opt.model_save_dir,
-               model_name=f"{opt.model_name}.pth")
+    # save_model(model=net,
+    #            target_dir=opt.model_save_dir,
+    #            model_name=f"{opt.model_name}.pth")
     # # Setup hyperparameters
     # NUM_EPOCHS = 30
     # BATCH_SIZE = 2

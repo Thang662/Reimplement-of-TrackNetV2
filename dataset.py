@@ -116,7 +116,7 @@ def get_data_loaders(root, frame_in, is_sequential, batch_size, transform = None
 
 
 if __name__ == "__main__":
-    root = "D:\\thang\\20232\\Dataset\\Dataset"
+    root = "D:\\thang\\20232\\thesis\\Dataset\\Dataset"
     train = True
     # transform = A.Compose([
     #     A.Resize(288, 512, p = 1),
@@ -135,6 +135,7 @@ if __name__ == "__main__":
     dataset = Tennis(root, train = train, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
     # dataset[200]
     train_loader, test_loader = get_data_loaders(root = root, transform = transform, frame_in = frame_in, is_sequential = is_sequential, batch_size = 2, NUM_WORKERS = 2)
-    for i, (imgs, heat_maps, annos, annos_transformed) in enumerate(train_loader):
-        # print(imgs, heat_maps, annos, annos_transformed)
-        print(imgs.shape, heat_maps.shape, annos.shape, annos_transformed.shape)
+    # for i, (imgs, heat_maps, annos, annos_transformed) in enumerate(test_loader):
+    #     # print(imgs, heat_maps, annos, annos_transformed)
+    #     print(imgs.shape, heat_maps.shape, annos.shape, annos_transformed.shape)
+    print(next(iter(train_loader))[0].shape)
