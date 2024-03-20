@@ -67,10 +67,10 @@ def batch_intersection_union(output, target, nclass):
     mini = 1
     maxi = nclass
     nbins = nclass
-    predict = (output > 0.5).float() + 1
+    predict = output + 1
     target = target.float() + 1
 
-    predict = predict.float() * (target > 0).float()
+    predict = predict * (target > 0).float()
     intersection = predict * (predict == target).float()
     # areas of intersection and union
     # element 0 in intersection occur the main difference from np.bincount. set boundary to -1 is necessary.

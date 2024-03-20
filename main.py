@@ -45,7 +45,7 @@ if __name__ == "__main__":
         net.apply(weight_init)
     
     loss_fn = FocalLoss(gamma = 2)
-    optimizer = torch.optim.Adam(net.parameters(),
+    optimizer = torch.optim.AdamW(net.parameters(),
                                  lr = opt.learning_rate)
     
     train_with_writer(model = net,

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 from score import SegmentationMetric
+from torchvision.utils import make_grid, save_image
 
 def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, criterion, evaluator, epoch = 1, device: str = 'cuda') -> tuple[float, float]:
     """
@@ -41,6 +42,7 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
 
         # Calculate and accumulate mIoU metric across all batches
         preds = torch.sigmoid(logits)
+        preds = (preds > 0.5).float()
         evaluator.update(preds, heatmaps)
         mIoU = evaluator.get()
 
@@ -53,24 +55,9 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
         
         # Calculate and accumulate accuracy metric across all batches
         if batch % 100 == 0:
-            preds = logits.detach()
-            preds = torch.sigmoid(preds).cpu().numpy()
-            plt.subplot(3, 2, 1)
-            th, hm_th        = cv2.threshold(preds[0][0], 0.5, 1, cv2.THRESH_BINARY)
-            plt.imshow(hm_th)
-            plt.subplot(3, 2, 2)
-            plt.imshow(heatmaps[0][0].cpu().numpy())
-            plt.subplot(3, 2, 3)
-            th, hm_th        = cv2.threshold(preds[0][1], 0.5, 1, cv2.THRESH_BINARY)
-            plt.imshow(hm_th)
-            plt.subplot(3, 2, 4)
-            plt.imshow(heatmaps[0][1].cpu().numpy())
-            plt.subplot(3, 2, 5)
-            th, hm_th        = cv2.threshold(preds[0][2], 0.5, 1, cv2.THRESH_BINARY)
-            plt.imshow(hm_th)
-            plt.subplot(3, 2, 6)
-            plt.imshow(heatmaps[0][2].cpu().numpy())
-            plt.savefig(f"hm/hm_{batch}_{epoch}.png")
+            grid = make_grid([preds[0][:1], heatmaps[0][:1], preds[0][1:2], heatmaps[0][1:2], preds[0][2:3], heatmaps[0][2:3]], nrow = 2, value_range = (0, 1), pad_value = 1)
+            save_image(grid, f"hm/hm_{batch}_{epoch}.png")
+
 
         # Update progress bar.
         pbar.update(len(imgs))
@@ -166,7 +153,9 @@ def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoade
     for epoch in range(epochs):
         print(f"Epoch: {epoch+1}")
         train_loss, train_mIoU = train_step(model = model, train_loader = train_loader, optimizer = optimizer, criterion = criterion, evaluator = evaluator, epoch = epoch, device = device)
+        evaluator.reset()
         test_loss, test_mIoU = test_step(model = model, test_loader = test_loader, criterion = criterion, evaluator = evaluator, device = device)
+        evaluator.reset()
 
         # Print result
         print(f"Epoch: {epoch+1}, Train Loss: {train_loss:.4f}, Train mIoU: {train_mIoU:.4f}, Test Loss: {test_loss:.4f}, Test mIoU: {test_mIoU:.4f}")

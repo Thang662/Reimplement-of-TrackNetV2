@@ -104,7 +104,7 @@ class Tennis(Dataset):
         annos = torch.tensor(annos)
         annos_transformed = torch.tensor(annos_transformed)
         # print(imgs.dtype, heat_maps.dtype, annos.dtype, annos_transformed.dtype)
-        return imgs.float(), heat_maps.int(), annos.float(), annos_transformed.float()
+        return imgs.float(), heat_maps.float(), annos.float(), annos_transformed.float()
     
 def get_data_loaders(root, frame_in, is_sequential, batch_size, transform = None, NUM_WORKERS = os.cpu_count()):
     train_dataset = Tennis(root = root, train = True, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
