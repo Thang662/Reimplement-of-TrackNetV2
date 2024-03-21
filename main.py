@@ -27,6 +27,10 @@ def get_opt():
     parser.add_argument('--model_save_dir', type=str, default='models', help='Directory to save the model')
     parser.add_argument('--weight_init', action='store_true', help='Whether to use weight initialization')
     parser.add_argument('--NUM_WORKERS', type=int, default=2, help='Number of workers for the DataLoader')
+    parser.add_argument('--optimizer', choices=['adam', 'adadelta', 'adamw'], default='adamw', help='Optimizer to use')
+    parser.add_argument('--log_dir', type=str, default='runs', help='Directory to save the logs')
+    parser.add_argument('--wandb_api', type=str, default='', help='API key for Weights & Biases')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     opt = parser.parse_args()
     return opt
 
@@ -40,12 +44,32 @@ if __name__ == "__main__":
         NUM_WORKERS = opt.NUM_WORKERS
     )
 
+    print(opt)
+
     net = TrackNetV2(opt.frame_in * 3,  opt.frame_in).to(opt.device)
+
+    if opt.wandb_api:
+        wandb.login(key = opt.wandb_api)
+        run = wandb.init(
+            project = opt.experiment_name,
+            name = opt.model_name,
+            config = opt
+        )
+
     if opt.weight_init:
         net.apply(weight_init)
-    
+
     loss_fn = FocalLoss(gamma = 2)
-    optimizer = torch.optim.Adadelta(net.parameters())
+
+    if opt.seed:
+        seed_everything(seed = opt.seed)
+
+    if opt.optimizer == 'adam':
+        optimizer = torch.optim.Adam(net.parameters(), lr = opt.learning_rate)
+    elif opt.optimizer == 'adadelta':
+        optimizer = torch.optim.Adadelta(net.parameters())
+    else:
+        optimizer = torch.optim.AdamW(net.parameters(), lr = opt.learning_rate)
     
     train_with_writer(model = net,
                       train_loader = train_dataloader,
@@ -54,65 +78,6 @@ if __name__ == "__main__":
                       experiment_name = opt.experiment_name,
                       model_name = opt.model_name,
                       criterion = loss_fn,
+                      run = run if opt.wandb_api else None,
                       epochs = opt.num_epochs,
                       device = opt.device)
-    
-    # save_model(model=net,
-    #            target_dir=opt.model_save_dir,
-    #            model_name=f"{opt.model_name}.pth")
-    # # Setup hyperparameters
-    # NUM_EPOCHS = 30
-    # BATCH_SIZE = 2
-    # LEARNING_RATE = 0.001
-    # frame_in = 3
-    # is_sequential = True
-
-
-    # # Setup directories
-    # root = 'Dataset/Dataset'
-
-    # # Setup target device
-    # device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    # # # Create transforms
-    # # data_transform = transforms.Compose([
-    # #   transforms.Resize((64, 64)),
-    # #   transforms.ToTensor()
-    # # ])
-
-    # # Create DataLoaders with help from data_setup.py
-    # train_dataloader, test_dataloader = get_data_loaders(
-    #     root = root,
-    #     frame_in = frame_in,
-    #     is_sequential = is_sequential,
-    #     batch_size = BATCH_SIZE,
-    #     NUM_WORKERS = 2
-    # )
-
-    # # Get class names
-    # # class_names = train_dataloader.dataset.classes
-
-    # # Create model with help from model_builder.py
-    # net = TrackNetV2(in_channels = frame_in * 3, out_channels = frame_in).to(device)
-    # net.apply(weight_init)
-
-    # # Set loss and optimizer
-    # loss_fn = FocalLoss(gamma = 2)
-    # optimizer = torch.optim.Adam(net.parameters(),
-    #                             lr = LEARNING_RATE)
-
-    # # Start training with help from engine.py
-    # train_with_writer(model = net,
-    #             train_loader = train_dataloader,
-    #             test_loader = test_dataloader,
-    #             criterion = loss_fn,
-    #             optimizer = optimizer,
-    #             epochs = NUM_EPOCHS,
-    #             device = device,
-    #             experiment_name = 'tennis',
-    #             model_name = 'TrackNetV2')
-
-    # # Save the model with help from utils.py
-    # save_model(model=net,
-    #             target_dir="models",
-    #             model_name="TrackNetV2.pth")

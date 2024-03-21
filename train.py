@@ -8,8 +8,9 @@ import cv2
 import os
 from score import SegmentationMetric
 from torchvision.utils import make_grid, save_image
+import wandb
 
-def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, criterion, evaluator, epoch = 1, device: str = 'cuda') -> tuple[float, float]:
+def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, criterion, evaluator, writer = None, run = None, epoch = 1, device: str = 'cuda') -> tuple[float, float]:
     """
     Performs a single training step.
     Args:
@@ -34,11 +35,6 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
         # Compute and accumlate loss.
         loss = criterion(logits, heatmaps)
         train_loss += loss.item()
-        # preds = logits.clone().detach()
-        # results = run(preds)
-        # if loss < 0.16:
-        #     print(results[0][0])
-        #     print(annos_transformed[0][0])
 
         # Calculate and accumulate mIoU metric across all batches
         preds = torch.sigmoid(logits)
@@ -54,9 +50,14 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
         optimizer.zero_grad()
         
         # Calculate and accumulate accuracy metric across all batches
-        if batch % 100 == 0:
+        if batch % 10 == 0:
             grid = make_grid([preds[0][:1], heatmaps[0][:1], preds[0][1:2], heatmaps[0][1:2], preds[0][2:3], heatmaps[0][2:3]], nrow = 2, value_range = (0, 1), pad_value = 1)
-            save_image(grid, f"hm/hm_{batch}_{epoch}.png")
+            if writer is not None:
+                writer.add_image(f'Comparison/{epoch + 1}', grid, global_step = epoch * len(train_loader) + batch)
+                writer.add_scalar("Loss/train/iteration", loss, epoch * len(train_loader) + batch)
+            if run is not None:
+                run.log({"Loss/train/iteration": loss})
+                run.log({f"Comparison_{epoch + 1}": [wandb.Image(grid, caption = f"Epoch {epoch + 1} Iteration {batch}")]})
 
 
         # Update progress bar.
@@ -130,7 +131,7 @@ def train(model: nn.Module, train_loader: torch.utils.data.DataLoader, test_load
         results["test_mIoU"].append(test_mIoU)
     return results
 
-def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoader, test_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, experiment_name = 'tennis', model_name = 'TrackNetV2', criterion = nn.CrossEntropyLoss(), epochs: int = 5, device: str = 'cuda') -> dict[str, list[float]]:
+def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoader, test_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, experiment_name = 'tennis', model_name = 'TrackNetV2', criterion = nn.CrossEntropyLoss(), run = None, epochs: int = 5, device: str = 'cuda') -> dict[str, list[float]]:
     """
     Trains a PyTorch model.
     Args:
@@ -148,11 +149,12 @@ def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoade
     """
     writer = create_writer(experiment_name = experiment_name, model_name = model_name)   
     writer.add_graph(model, next(iter(train_loader))[0].to(device))
+    run.watch(model, log = "all")
     results = {'train_loss': [], 'train_mIoU': [], 'test_loss': [], 'test_mIoU': []}
     evaluator = SegmentationMetric(2)
     for epoch in range(epochs):
         print(f"Epoch: {epoch+1}")
-        train_loss, train_mIoU = train_step(model = model, train_loader = train_loader, optimizer = optimizer, criterion = criterion, evaluator = evaluator, epoch = epoch, device = device)
+        train_loss, train_mIoU = train_step(model = model, train_loader = train_loader, optimizer = optimizer, criterion = criterion, evaluator = evaluator, writer = writer, run = run, epoch = epoch, device = device)
         evaluator.reset()
         test_loss, test_mIoU = test_step(model = model, test_loader = test_loader, criterion = criterion, evaluator = evaluator, device = device)
         evaluator.reset()
@@ -172,6 +174,11 @@ def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoade
             writer.add_scalar("Loss/test", test_loss, epoch)
             writer.add_scalar("mIoU/train", train_mIoU, epoch)
             writer.add_scalar("mIoU/test", test_mIoU, epoch)
+        
+        # Log metrics to Weights & Biases
+        if run is not None:
+            run.log({"Loss/train": train_loss, "Loss/test": test_loss, "mIoU/train": train_mIoU, "mIoU/test": test_mIoU})
+
         # Save model
         save_model(model, experiment_name, model_name + f'_epoch_{epoch}.pth')
     return results
