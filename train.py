@@ -50,7 +50,7 @@ def train_step(model: nn.Module, train_loader: torch.utils.data.DataLoader, opti
         optimizer.zero_grad()
         
         # Calculate and accumulate accuracy metric across all batches
-        if batch % 10 == 0:
+        if batch % 100 == 0:
             grid = make_grid([preds[0][:1], heatmaps[0][:1], preds[0][1:2], heatmaps[0][1:2], preds[0][2:3], heatmaps[0][2:3]], nrow = 2, value_range = (0, 1), pad_value = 1)
             if writer is not None:
                 writer.add_image(f'Comparison/{epoch + 1}', grid, global_step = epoch * len(train_loader) + batch)
