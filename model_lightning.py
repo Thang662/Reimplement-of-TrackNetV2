@@ -26,9 +26,10 @@ class LitTrackNetV2(L.LightningModule):
 
     def on_train_start(self):
         tensorboard_logger = self.loggers[0].experiment
-        wandb_logger = self.loggers[1].experiment
         tensorboard_logger.add_graph(self.net, self.example_input_array.to(self.device))
-        wandb_logger.watch(self.net, log = "all", log_graph = True)
+        if len(self.loggers) > 1:
+            wandb_logger = self.loggers[1].experiment
+            wandb_logger.watch(self.net, log = "all", log_graph = True)
     
     def training_step(self, batch, batch_idx):
         imgs, heatmaps, annos, annos_transformed = batch
@@ -45,11 +46,12 @@ class LitTrackNetV2(L.LightningModule):
         self.training_step_unions.append(union)
 
         if batch_idx % self.log_image_every_n_steps == 0:
-            tensorboard_logger = self.loggers[0].experiment
-            wandb_logger = self.loggers[1].experiment
             grid = make_grid([preds[0][:1], heatmaps[0][:1], preds[0][1:2], heatmaps[0][1:2], preds[0][2:3], heatmaps[0][2:3]], nrow = 2, value_range = (0, 1), pad_value = 1)
+            tensorboard_logger = self.loggers[0].experiment
             tensorboard_logger.add_image(f'Comparison/{self.current_epoch + 1}', grid, global_step = batch_idx)
-            wandb_logger.log({f"Comparison_{self.current_epoch + 1}": [wandb.Image(grid, caption = f"Epoch {self.current_epoch + 1} Iteration {batch_idx}")]})
+            if len(self.loggers) > 1:
+                wandb_logger = self.loggers[1].experiment
+                wandb_logger.log({f"Comparison_{self.current_epoch + 1}": [wandb.Image(grid, caption = f"Epoch {self.current_epoch + 1} Iteration {batch_idx}")]})
 
 
         self.log('train_loss', loss, prog_bar = True, logger = True, on_step = True, on_epoch = True)
@@ -83,7 +85,11 @@ class LitTrackNetV2(L.LightningModule):
 
         if batch_idx % self.log_image_every_n_steps == 0:
             grid = make_grid([preds[0][:1], heatmaps[0][:1], preds[0][1:2], heatmaps[0][1:2], preds[0][2:3], heatmaps[0][2:3]], nrow = 2, value_range = (0, 1), pad_value = 1)
-            self.logger.experiment.add_image(f'Comparison/{self.current_epoch}', grid, global_step = batch_idx)
+            tensorboard_logger = self.loggers[0].experiment
+            tensorboard_logger.add_image(f'Comparison/val/{self.current_epoch}', grid, global_step = batch_idx)
+            if len(self.loggers) > 1:
+                wandb_logger = self.loggers[1].experiment
+                wandb_logger.log({f"Comparison_val_{self.current_epoch}": [wandb.Image(grid, caption = f"Epoch {self.current_epoch} Iteration {batch_idx}")]})
 
         self.log('val_loss', loss, prog_bar = True, logger = True, on_step = True, on_epoch = True)
         return loss

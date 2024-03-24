@@ -35,7 +35,7 @@ def get_opt():
     parser.add_argument('--strategy', type=str, default='auto', help='Strategy for training')
     parser.add_argument('--devices', type=str, default='auto', help='Devices for training')
     parser.add_argument('--num_nodes', type=int, default=1, help='Number of nodes for training')
-    parser.add_argument('--log_image_every_n_steps', type=int, default=10, help='Log image every n steps')
+    parser.add_argument('--log_image_every_n_steps', type=int, default=100, help='Log image every n steps')
     opt = parser.parse_args()
     return opt
 
@@ -50,10 +50,13 @@ if __name__ == "__main__":
 
     dm = TennisDataModule(root = opt.root, frame_in = opt.frame_in, is_sequential = opt.is_sequential, batch_size = opt.batch_size, num_workers = opt.NUM_WORKERS)
 
+    tensorboard_logger = TensorBoardLogger('')
     if opt.wandb_api:
         wandb.login(key = opt.wandb_api)
         wandb_logger = WandbLogger(name = opt.model_name, project = opt.experiment_name)
-    tensorboard_logger = TensorBoardLogger('')
+        loggers = [tensorboard_logger, wandb_logger]
+    else:
+        loggers = [tensorboard_logger]
 
     if opt.optimizer == 'adam':
         optimizer = torch.optim.Adam
@@ -107,5 +110,5 @@ if __name__ == "__main__":
         dirpath="models",
         filename= opt.model_name + "-{epoch:02d}-{val_mIoU:.2f}",
     )
-    trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = [checkpoint_callback], logger = [tensorboard_logger, wandb_logger], precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes)
+    trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = [checkpoint_callback], logger = loggers, precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes)
     trainer.fit(model, datamodule = dm)
