@@ -94,6 +94,7 @@ def test_step(model: nn.Module, test_loader: torch.utils.data.DataLoader, criter
 
             # Calculate and accumulate mIoU metric across all batches
             preds = torch.sigmoid(logits)
+            preds = (preds > 0.5).float()
             evaluator.update(preds, heatmaps)
 
         # Compute average loss and accuracy across all batches.
@@ -149,7 +150,8 @@ def train_with_writer(model: nn.Module, train_loader: torch.utils.data.DataLoade
     """
     writer = create_writer(experiment_name = experiment_name, model_name = model_name)   
     writer.add_graph(model, next(iter(train_loader))[0].to(device))
-    run.watch(model, log = "all")
+    if run is not None:
+        run.watch(model, log = "all")
     results = {'train_loss': [], 'train_mIoU': [], 'test_loss': [], 'test_mIoU': []}
     evaluator = SegmentationMetric(2)
     for epoch in range(epochs):
