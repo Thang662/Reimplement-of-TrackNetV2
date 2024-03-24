@@ -21,7 +21,7 @@ class Tennis(Dataset):
         self.transform = transform
         self.frame_in = frame_in
         self.is_sequential = is_sequential
-        self.games = train_games if train else [i for i in range(9, 11) if i not in train_games]
+        self.games = train_games if train else [i for i in range(1, 11) if i not in train_games]
         self.data = self.load_data()
         self.r = r
         self.w = w
@@ -94,11 +94,6 @@ class Tennis(Dataset):
             heat_maps.append(torch.tensor(heat_map))
             annos.append(list(keypoint))
             annos_transformed.append(list(keypoint_transformed[0]))
-            # plt.subplot(1, 2, 1)
-            # plt.imshow(ToPILImage(img))
-            # plt.subplot(1, 2, 2)
-            # plt.imshow(heat_map)
-            # plt.show()
         imgs = torch.cat(imgs)
         heat_maps = torch.stack(heat_maps)
         annos = torch.tensor(annos)
