@@ -40,8 +40,7 @@ class LitTrackNetV2(L.LightningModule):
 
         preds = (torch.sigmoid(logits) > 0.5).float()
         intersection = torch.sum(preds * heatmaps)
-        union = torch.logical_or(preds, heatmaps)
-        iou = torch.sum(intersection) / torch.sum(union)
+        union = torch.sum(torch.logical_or(preds, heatmaps))
         self.training_step_intersections.append(intersection)
         self.training_step_unions.append(union)
 
@@ -54,7 +53,7 @@ class LitTrackNetV2(L.LightningModule):
                 wandb_logger.log({f"Comparison_{self.current_epoch + 1}": [wandb.Image(grid, caption = f"Epoch {self.current_epoch + 1} Iteration {batch_idx}")]})
 
 
-        self.log('train_loss', loss, prog_bar = True, logger = True, on_step = True, on_epoch = True)
+        self.log('train_loss', loss, prog_bar = True, logger = True, on_step = True, on_epoch = True, sync_dist = True)
         return loss
     
     def on_train_batch_end(self, outputs, batch, batch_idx):
@@ -64,7 +63,7 @@ class LitTrackNetV2(L.LightningModule):
 
     def on_train_epoch_end(self):
         epoch_intersection = torch.stack(self.training_step_intersections).sum()
-        epoch_union = torch.cat(self.training_step_unions).sum()
+        epoch_union = torch.stack(self.training_step_unions).sum()
         epoch_miou = epoch_intersection / epoch_union
         self.log('train_mIoU', epoch_miou, prog_bar = True, logger = True, on_step = False, on_epoch = True)
         self.training_step_intersections.clear()
@@ -79,7 +78,7 @@ class LitTrackNetV2(L.LightningModule):
 
         preds = (torch.sigmoid(logits) > 0.5).float()
         intersection = torch.sum(preds * heatmaps)
-        union = torch.logical_or(preds, heatmaps)
+        union = torch.sum(torch.logical_or(preds, heatmaps))
         self.validation_step_intersections.append(intersection)
         self.validation_step_unions.append(union)
 
@@ -91,7 +90,7 @@ class LitTrackNetV2(L.LightningModule):
                 wandb_logger = self.loggers[1].experiment
                 wandb_logger.log({f"Comparison_val_{self.current_epoch}": [wandb.Image(grid, caption = f"Epoch {self.current_epoch} Iteration {batch_idx}")]})
 
-        self.log('val_loss', loss, prog_bar = True, logger = True, on_step = True, on_epoch = True)
+        self.log('val_loss', loss, logger = True, on_epoch = True, sync_dist = True)
         return loss
     
     def on_validation_batch_end(self, outputs, batch, batch_idx):
@@ -100,7 +99,7 @@ class LitTrackNetV2(L.LightningModule):
     
     def on_validation_epoch_end(self):
         epoch_intersection = torch.stack(self.validation_step_intersections).sum()
-        epoch_union = torch.cat(self.validation_step_unions).sum()
+        epoch_union = torch.stack(self.validation_step_unions).sum()
         epoch_miou = epoch_intersection / epoch_union
         self.log('val_mIoU', epoch_miou, prog_bar = True, logger = True, on_step = False, on_epoch = True)
         self.validation_step_intersections.clear()

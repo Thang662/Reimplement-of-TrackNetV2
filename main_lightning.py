@@ -20,7 +20,7 @@ def get_opt():
     parser.add_argument('--is_sequential', type=bool, default=True, help='Whether the input frames are sequential')
     parser.add_argument('--batch_size', type=int, default=2, help='Batch size')
     parser.add_argument('--num_epochs', type=int, default=30, help='Number of epochs')
-    parser.add_argument('--learning_rate', type=float, default=0.04365158322401657, help='Learning rate')
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--model_name', type=str, default='TrackNetV2', help='Name of the model')
     parser.add_argument('--experiment_name', type=str, default='tennis', help='Name of the experiment')
     parser.add_argument('--model_save_dir', type=str, default='models', help='Directory to save the model')
