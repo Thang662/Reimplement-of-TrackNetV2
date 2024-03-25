@@ -101,7 +101,7 @@ class LitTrackNetV2(L.LightningModule):
         epoch_intersection = torch.stack(self.validation_step_intersections).sum()
         epoch_union = torch.stack(self.validation_step_unions).sum()
         epoch_miou = epoch_intersection / epoch_union
-        self.log('val_mIoU', epoch_miou, prog_bar = True, logger = True, on_step = False, on_epoch = True)
+        self.log('val_mIoU', epoch_miou, logger = True, on_step = False, on_epoch = True)
         self.validation_step_intersections.clear()
         self.validation_step_unions.clear()
 
