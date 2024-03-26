@@ -115,7 +115,7 @@ if __name__ == "__main__":
             time="grey82",
             processing_speed="grey82",
             metrics="grey82",
-            metrics_text_delimiter="\n",
+            metrics_text_delimiter="\t",
             metrics_format=".3e",
         )
     )
