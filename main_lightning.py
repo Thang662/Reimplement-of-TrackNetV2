@@ -105,20 +105,20 @@ if __name__ == "__main__":
     # print(new_lr)
 
     # create your own theme!
-    progress_bar = RichProgressBar(
-        theme=RichProgressBarTheme(
-            description="green_yellow",
-            progress_bar="blue1",
-            progress_bar_finished="green1",
-            progress_bar_pulse="#6206E0",
-            batch_progress="green_yellow",
-            time="grey82",
-            processing_speed="grey82",
-            metrics="grey82",
-            metrics_text_delimiter="\t",
-            metrics_format=".3e",
-        )
-    )
+    # progress_bar = RichProgressBar(
+    #     theme=RichProgressBarTheme(
+    #         description="green_yellow",
+    #         progress_bar="blue1",
+    #         progress_bar_finished="green1",
+    #         progress_bar_pulse="#6206E0",
+    #         batch_progress="green_yellow",
+    #         time="grey82",
+    #         processing_speed="grey82",
+    #         metrics="grey82",
+    #         metrics_text_delimiter="\t",
+    #         metrics_format=".3e",
+    #     )
+    # )
         
     # saves top-K checkpoints based on "val_mIoU" metric
     checkpoint_callback = ModelCheckpoint(
@@ -133,6 +133,6 @@ if __name__ == "__main__":
     # log learning rate
     learning_rate_monitor = LearningRateMonitor(logging_interval = 'step')
 
-    callbacks = [progress_bar, checkpoint_callback, learning_rate_monitor]
+    callbacks = [checkpoint_callback, learning_rate_monitor]
     trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = callbacks, logger = loggers, precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes, limit_train_batches = opt.limit_train_batches, limit_val_batches = opt.limit_val_batches)
     trainer.fit(model, datamodule = dm)
