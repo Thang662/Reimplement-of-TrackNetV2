@@ -106,7 +106,9 @@ class LitTrackNetV2(L.LightningModule):
         self.validation_step_unions.clear()
 
     def configure_optimizers(self):
-        return self.optimizer(self.parameters(), lr = self.lr)
+        optimizer = self.optimizer(params = self.parameters(), lr = self.lr)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer = optimizer, milestones = [10, 20, 30], gamma = 0.1)
+        return [optimizer], [scheduler]
     
     def forward(self, x):
         return self.net(x)

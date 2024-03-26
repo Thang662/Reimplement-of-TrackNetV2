@@ -1,17 +1,17 @@
-import os
 import torch
 from dataset_lightning import TennisDataModule
 from model_lightning import *
-# from train import *
-# from utils import *
-# from loss import *
 from weight_init import weight_init
 import argparse
 import wandb
 from lightning.pytorch.tuner import Tuner
-from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
+from lightning.pytorch.callbacks import RichProgressBar, LearningRateMonitor, ModelCheckpoint
+from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 # import data_setup, train, model_builder, utils
+# from train import *
+# from utils import *
+# from loss import *
 
 def get_opt():
     parser = argparse.ArgumentParser(description='Train a TrackNetV2 model')
@@ -36,6 +36,8 @@ def get_opt():
     parser.add_argument('--devices', type=str, default='auto', help='Devices for training')
     parser.add_argument('--num_nodes', type=int, default=1, help='Number of nodes for training')
     parser.add_argument('--log_image_every_n_steps', type=int, default=100, help='Log image every n steps')
+    parser.add_argument('--limit_train_batches', type=float, default=1.0, help='Limit train batches')
+    parser.add_argument('--limit_val_batches', type=float, default=1.0, help='Limit validation batches')
     opt = parser.parse_args()
     return opt
 
@@ -101,14 +103,36 @@ if __name__ == "__main__":
     # # Pick point based on plot, or get suggestion
     # new_lr = lr_finder.suggestion()
     # print(new_lr)
-    
+
+    # create your own theme!
+    progress_bar = RichProgressBar(
+        theme=RichProgressBarTheme(
+            description="green_yellow",
+            progress_bar="blue1",
+            progress_bar_finished="green1",
+            progress_bar_pulse="#6206E0",
+            batch_progress="green_yellow",
+            time="grey82",
+            processing_speed="grey82",
+            metrics="grey82",
+            metrics_text_delimiter="\n",
+            metrics_format=".3e",
+        )
+    )
+        
     # saves top-K checkpoints based on "val_mIoU" metric
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=10,
-        monitor="val_mIoU",
-        mode="max",
-        dirpath="models",
-        filename= opt.model_name + "-{epoch:02d}-{val_mIoU:.2f}",
+        save_last = True,
+        save_top_k = 10,
+        monitor = "val_mIoU",
+        mode = "max",
+        dirpath = "models",
+        filename =  opt.model_name + "-{epoch:02d}-{val_mIoU:.2f}",
     )
-    trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = [checkpoint_callback], logger = loggers, precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes)
+
+    # log learning rate
+    learning_rate_monitor = LearningRateMonitor(logging_interval = 'step')
+
+    callbacks = [progress_bar, checkpoint_callback, learning_rate_monitor]
+    trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = callbacks, logger = loggers, precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes, limit_train_batches = opt.limit_train_batches, limit_val_batches = opt.limit_val_batches)
     trainer.fit(model, datamodule = dm)
