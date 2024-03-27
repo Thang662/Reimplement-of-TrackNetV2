@@ -28,16 +28,23 @@ class Tennis(Dataset):
         self.h = h
         if self.transform is None:
             if self.train:
+                # self.transform = A.Compose([
+                #         A.Resize(height = self.h, width = self.w, p = 1), 
+                #         A.RandomSizedCrop(min_max_height = (self.h * 0.5, self.h), height = self.h, width = self.w, p = 0.5),
+                #         A.HorizontalFlip(p = 0.5),
+                #         A.Rotate(limit = 40, p = 0.5),
+                #         A.OneOf([
+                #             A.HueSaturationValue(p = 0.5),
+                #             A.RGBShift(p = 0.7)
+                #         ], p = 1),
+                #         A.RandomBrightnessContrast(p = 0.5),
+                #         A.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225], max_pixel_value = 255.0, p = 1.0),
+                #         ToTensorV2()
+                #     ],
+                #     keypoint_params = A.KeypointParams(format = 'xy'),
+                # )
                 self.transform = A.Compose([
-                        A.Resize(height = self.h, width = self.w, p = 1), 
-                        A.RandomSizedCrop(min_max_height = (self.h * 0.5, self.h), height = self.h, width = self.w, p = 0.5),
-                        A.HorizontalFlip(p = 0.5),
-                        A.Rotate(limit = 40, p = 0.5),
-                        A.OneOf([
-                            A.HueSaturationValue(p = 0.5),
-                            A.RGBShift(p = 0.7)
-                        ], p = 1),
-                        A.RandomBrightnessContrast(p = 0.5),
+                        A.Resize(height = self.h, width = self.w, p = 1),
                         A.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225], max_pixel_value = 255.0, p = 1.0),
                         ToTensorV2()
                     ],

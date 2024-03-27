@@ -11,6 +11,7 @@ from utils import *
 from loss import *
 from weight_init import weight_init
 import argparse
+import unet2d
 # import data_setup, train, model_builder, utils
 
 def get_opt():
@@ -47,6 +48,10 @@ if __name__ == "__main__":
     print(opt)
 
     net = TrackNetV2(opt.frame_in * 3,  opt.frame_in).to(opt.device)
+    # net = unet2d.TrackNetV2(n_channels = opt.frame_in * 3, n_classes = opt.frame_in)
+    # state_dict = torch.load('tracknetv2_tennis_best.pth.tar')
+    # net.load_state_dict(state_dict['model_state_dict'], strict = True)
+    # net = net.to(opt.device)
 
     if opt.wandb_api:
         wandb.login(key = opt.wandb_api)
@@ -81,3 +86,10 @@ if __name__ == "__main__":
                       run = run if opt.wandb_api else None,
                       epochs = opt.num_epochs,
                       device = opt.device)
+    # evaluator = SegmentationMetric(2)
+    # test_lost, test_mIoU = test_step(model = net,
+    #           test_loader = test_dataloader,
+    #           criterion = loss_fn,
+    #           evaluator = evaluator,
+    #           device = opt.device)
+    # print(f"Test Loss: {test_lost:.4e}, Test mIoU: {test_mIoU:.4f}")
