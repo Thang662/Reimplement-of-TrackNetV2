@@ -107,8 +107,8 @@ class LitTrackNetV2(L.LightningModule):
 
     def configure_optimizers(self):
         optimizer = self.optimizer(params = self.parameters(), lr = self.lr)
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer = optimizer, milestones = [10, 20, 30], gamma = 0.1)
-        return [optimizer], [scheduler]
+        # scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer = optimizer, milestones = [10, 20, 30], gamma = 0.1)
+        return optimizer
     
     def forward(self, x):
         return self.net(x)
