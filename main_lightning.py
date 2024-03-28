@@ -8,6 +8,7 @@ from lightning.pytorch.tuner import Tuner
 from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from lightning.pytorch.callbacks import RichProgressBar, LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
+from functools import partial
 # import data_setup, train, model_builder, utils
 # from train import *
 # from utils import *
@@ -38,6 +39,7 @@ def get_opt():
     parser.add_argument('--log_image_every_n_steps', type=int, default=100, help='Log image every n steps')
     parser.add_argument('--limit_train_batches', type=float, default=1.0, help='Limit train batches')
     parser.add_argument('--limit_val_batches', type=float, default=1.0, help='Limit validation batches')
+    parser.add_argument('--scheduler', type=str, default='', help='Scheduler to use')
     opt = parser.parse_args()
     return opt
 
@@ -67,10 +69,13 @@ if __name__ == "__main__":
     else:
         optimizer = torch.optim.AdamW
 
+    if opt.scheduler == 'step_lr':
+        scheduler = partial(torch.optim.lr_scheduler.MultiStepLR, milestones = [10, 20, 30])
+
     if opt.weight_init:
-        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, weight_init = weight_init, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate)
+        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, weight_init = weight_init, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler)
     else:
-        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate)
+        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler)
 
 
     # fast_dev_run = True for testing purposes
@@ -131,8 +136,17 @@ if __name__ == "__main__":
     )
 
     # log learning rate
-    learning_rate_monitor = LearningRateMonitor(logging_interval = 'step')
+    learning_rate_monitor = LearningRateMonitor(logging_interval = 'epoch')
 
     callbacks = [checkpoint_callback, learning_rate_monitor]
-    trainer = L.Trainer(max_epochs = opt.num_epochs, callbacks = callbacks, logger = loggers, precision = opt.precision, accelerator = opt.accelerator, strategy = opt.strategy, devices = opt.devices, num_nodes = opt.num_nodes, limit_train_batches = opt.limit_train_batches, limit_val_batches = opt.limit_val_batches)
+    trainer = L.Trainer(max_epochs = opt.num_epochs, 
+                        callbacks = callbacks, 
+                        logger = loggers, 
+                        precision = opt.precision, 
+                        accelerator = opt.accelerator, 
+                        strategy = opt.strategy, 
+                        devices = opt.devices, 
+                        num_nodes = opt.num_nodes, 
+                        limit_train_batches = opt.limit_train_batches, 
+                        limit_val_batches = opt.limit_val_batches)
     trainer.fit(model, datamodule = dm)

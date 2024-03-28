@@ -2,6 +2,7 @@ from collections import defaultdict
 import numpy as np
 import cv2
 import torch
+from evaluator import eval_single_frame
 
 # from utils.utils import _nms, _top1
 # from utils.image import get_affine_transform, affine_transform
@@ -45,13 +46,14 @@ def _detect_blob_center(self, hm):
 """
 
 def _detect_blob_concomp(hm, _score_threshold = 0.5, _use_hm_weight = False):
-    xys, scores = [], []
+    xys, score, visi = [], [], False
     if np.max(hm) > _score_threshold:
+        best_score = -1
         visi = True
         th, hm_th        = cv2.threshold(hm, _score_threshold, 1, cv2.THRESH_BINARY)
         n_labels, labels = cv2.connectedComponents(hm_th.astype(np.uint8))
-        for m in range(1,n_labels):
-            ys, xs = np.where( labels==m )
+        for m in range(1, n_labels):
+            ys, xs = np.where(labels == m)
             ws     = hm[ys, xs]
             if _use_hm_weight:
                 score  = ws.sum()
@@ -63,9 +65,10 @@ def _detect_blob_concomp(hm, _score_threshold = 0.5, _use_hm_weight = False):
                 y      = np.sum( np.array(ys) ) / ws.shape[0]
                 #print(xs, ys)
                 #print(score, x, y)
-            xys.append( np.array([x, y]) )
-            scores.append( score)
-    return xys, scores
+            if score > best_score:
+                best_score = score
+                xys = np.array([x, y])
+    return xys, score, visi
 
 def _detect_blob_nms(hm, _score_threshold = 0.5, sigma = 2.5, _use_hm_weight = False):
     xys, scores  = [], []
@@ -95,10 +98,12 @@ def _detect_blob_nms(hm, _score_threshold = 0.5, sigma = 2.5, _use_hm_weight = F
         hm[dist_map<=sigma**2] = 0.
     return xys, scores
 
-def run(preds, _blob_det_method = 'concomp', _sigmas = [2.5]):
+def run(probs, annos_transformed, visibilities, _blob_det_method = 'concomp', _sigmas = [2.5]):
     results = defaultdict(lambda: defaultdict(dict))
-    preds_       = preds
-    hms_         = preds_.sigmoid_().cpu().numpy()           
+    hms_         = probs.cpu().numpy()
+    annos_transformed = annos_transformed.cpu().numpy()
+    visibilities = visibilities.cpu().numpy()
+    tp, tn, fp1, fp2, fn = 0, 0, 0, 0, 0
 
     b,s,h,w = hms_.shape
     for i in range(b):
@@ -115,14 +120,14 @@ def run(preds, _blob_det_method = 'concomp', _sigmas = [2.5]):
                 xys_, scores_ = _detect_blob_gravity(hms_[i,j])
             """
             if _blob_det_method=='concomp':
-                xys_, scores_ = _detect_blob_concomp(hms_[i,j])
+                xys_, scores_, vis = _detect_blob_concomp(hms_[i,j])
+                res = eval_single_frame(xys_, vis, scores_, annos_transformed[i][j], visibilities[i][j])
+                tp += res['tp']
+                tn += res['tn']
+                fp1 += res['fp1']
+                fp2 += res['fp2']
+                fn += res['fn']
             elif _blob_det_method=='nms':
                 xys_, scores_ = _detect_blob_nms(hms_[i,j], _sigmas)
-            # xys_t_ = []
-            # for xy_ in xys_:
-            #     xys_t_.append( affine_transform(xy_, affine_mats_[i]))
-            #results[i][j] = {'xy': xy_, 'visi': visi_, 'blob_size': blob_size_}
-            #results[i][j] = {'xy': xy_, 'visi': visi_, 'blob_score': blob_score_}
-            results[i][j] = {'xys': xys_, 'scores': scores_}
-    return results
+    return tp, tn, fp1, fp2, fn
 

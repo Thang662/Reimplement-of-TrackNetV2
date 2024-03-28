@@ -82,6 +82,7 @@ class Tennis(Dataset):
         heat_maps = []
         annos = []
         annos_transformed = []
+        vises = []
         for path, keypoint, vis in zip(paths, keypoints, visibilities):
             img = cv2.imread(path)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -94,9 +95,11 @@ class Tennis(Dataset):
             img = transformed['image']
             if keypoint_transformed:
                 heat_map = gen_binary_map((img.shape[2], img.shape[1]), keypoint_transformed[0], self.r)
+                vises.append(1)
             else:
                 heat_map = np.zeros(shape = (img.shape[1], img.shape[2]))
                 keypoint_transformed.append([-1, -1])
+                vises.append(0)
             imgs.append(img)
             heat_maps.append(torch.tensor(heat_map))
             annos.append(list(keypoint))
@@ -105,8 +108,9 @@ class Tennis(Dataset):
         heat_maps = torch.stack(heat_maps)
         annos = torch.tensor(annos)
         annos_transformed = torch.tensor(annos_transformed)
+        vises = torch.tensor(vises)
         # print(imgs.dtype, heat_maps.dtype, annos.dtype, annos_transformed.dtype)
-        return imgs.float(), heat_maps.float(), annos.float(), annos_transformed.float()
+        return imgs.float(), heat_maps.float(), annos.float(), annos_transformed.float(), vises.float()
     
 def get_data_loaders(root, frame_in, is_sequential, batch_size, transform = None, NUM_WORKERS = os.cpu_count()):
     train_dataset = Tennis(root = root, train = True, transform = transform, frame_in = frame_in, is_sequential = is_sequential)
@@ -140,4 +144,4 @@ if __name__ == "__main__":
     # for i, (imgs, heat_maps, annos, annos_transformed) in enumerate(test_loader):
     #     # print(imgs, heat_maps, annos, annos_transformed)
     #     print(imgs.shape, heat_maps.shape, annos.shape, annos_transformed.shape)
-    print(next(iter(train_loader))[0].shape)
+    print(next(iter(train_loader))[4])
