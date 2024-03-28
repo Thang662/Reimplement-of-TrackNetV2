@@ -71,6 +71,8 @@ if __name__ == "__main__":
 
     if opt.scheduler == 'step_lr':
         scheduler = partial(torch.optim.lr_scheduler.MultiStepLR, milestones = [10, 20, 30])
+    else:
+        scheduler = None
 
     if opt.weight_init:
         model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, weight_init = weight_init, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler)
