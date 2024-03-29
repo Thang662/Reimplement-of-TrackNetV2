@@ -1,5 +1,5 @@
 import torch
-from dataset_lightning import TennisDataModule
+from dataset_lightning import *
 from model_lightning import *
 from weight_init import weight_init
 import argparse
@@ -40,6 +40,9 @@ def get_opt():
     parser.add_argument('--limit_train_batches', type=float, default=1.0, help='Limit train batches')
     parser.add_argument('--limit_val_batches', type=float, default=1.0, help='Limit validation batches')
     parser.add_argument('--scheduler', type=str, default='', help='Scheduler to use')
+    parser.add_argument('--train_transform', action='store_true', help='Transforms for training data')
+    parser.add_argument('--h', type=int, default=288, help='Height of the image')
+    parser.add_argument('--w', type=int, default=512, help='Width of the image')
     opt = parser.parse_args()
     return opt
 
@@ -52,7 +55,31 @@ if __name__ == "__main__":
     if opt.devices != 'auto':
         opt.devices = eval(opt.devices)
 
-    dm = TennisDataModule(root = opt.root, frame_in = opt.frame_in, is_sequential = opt.is_sequential, batch_size = opt.batch_size, num_workers = opt.NUM_WORKERS)
+    if opt.train_transform:
+        train_transform = A.Compose([
+                        A.Resize(height = opt.h, width = opt.w, p = 1), 
+                        A.HorizontalFlip(p = 0.5),
+                        A.Rotate(limit = 40, p = 0.5),
+                        A.OneOf([
+                            A.HueSaturationValue(p = 0.5),
+                            A.RGBShift(p = 0.7)
+                        ], p = 1),
+                        A.RandomBrightnessContrast(p = 0.5),
+                        A.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225], max_pixel_value = 255.0, p = 1.0),
+                        ToTensorV2()
+                    ],
+                    keypoint_params = A.KeypointParams(format = 'xy'),
+                )
+    else:
+        train_transform = None
+
+
+    dm = TennisDataModule(root = opt.root, 
+                          frame_in = opt.frame_in, 
+                          is_sequential = opt.is_sequential, 
+                          train_transform = train_transform, 
+                          batch_size = opt.batch_size, 
+                          num_workers = opt.NUM_WORKERS)
 
     tensorboard_logger = TensorBoardLogger('')
     if opt.wandb_api:
