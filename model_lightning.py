@@ -122,8 +122,14 @@ class LitTrackNetV2(L.LightningModule):
         epoch_intersection = torch.stack(self.validation_step_intersections).sum()
         epoch_union = torch.stack(self.validation_step_unions).sum()
         epoch_miou = epoch_intersection / epoch_union
-        epoch_prec = self.tp / (self.tp + self.fp1 + self.fp2)
-        epoch_recall = self.tp / (self.tp + self.fn)
+        if self.tp + self.fp1 + self.fp2 == 0:
+            epoch_prec = 0
+        else:
+            epoch_prec = self.tp / (self.tp + self.fp1 + self.fp2)
+        if self.tp + self.fn == 0:
+            epoch_recall = 0
+        else:
+            epoch_recall = self.tp / (self.tp + self.fn)
         if epoch_prec + epoch_recall == 0:
             epoch_f1 = 0
         else:
