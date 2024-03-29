@@ -134,6 +134,11 @@ class LitTrackNetV2(L.LightningModule):
         self.log('val_f1', epoch_f1, logger = True, on_step = False, on_epoch = True, sync_dist = True)
         self.validation_step_intersections.clear()
         self.validation_step_unions.clear()
+        self.tp = 0
+        self.tn = 0
+        self.fp1 = 0
+        self.fp2 = 0
+        self.fn = 0
 
     def configure_optimizers(self):
         optimizer = self.optimizer(params = self.parameters(), lr = self.lr)
