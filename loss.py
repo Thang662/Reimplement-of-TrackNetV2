@@ -81,6 +81,7 @@ class DiceBCELoss(nn.Module):
         inputs = inputs.float()
         targets = targets.float()
         
+        BCE = F.binary_cross_entropy_with_logits(inputs, targets, reduction='mean')
         #comment out if your model contains a sigmoid or equivalent activation layer
         inputs = F.sigmoid(inputs)       
         
@@ -90,7 +91,6 @@ class DiceBCELoss(nn.Module):
         
         intersection = (inputs * targets).sum()                            
         dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
-        BCE = F.binary_cross_entropy(inputs, targets, reduction='mean')
         Dice_BCE = BCE + dice_loss
         
         return Dice_BCE
@@ -99,10 +99,11 @@ class FocalDiceLoss(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(FocalDiceLoss, self).__init__()
 
-    def forward(self, inputs, targets, alpha=0, gamma=2, smooth=1):
+    def forward(self, inputs, targets, alpha=None, gamma=2, smooth=1):
         inputs = inputs.float()
         targets = targets.float()
         
+        BCE = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
         #comment out if your model contains a sigmoid or equivalent activation layer
         inputs = F.sigmoid(inputs)       
         
@@ -111,7 +112,6 @@ class FocalDiceLoss(nn.Module):
         targets = targets.view(-1)
         
         #first compute binary cross-entropy 
-        BCE = F.binary_cross_entropy(inputs, targets, reduction='none')
         BCE_EXP = torch.exp(-BCE)
         focal_loss = (1-BCE_EXP)**gamma * BCE
         if alpha is not None:
@@ -128,10 +128,11 @@ class FocalDiceBCELoss(nn.Module):
     def __init__(self, weight=None, size_average=True):
         super(FocalDiceBCELoss, self).__init__()
 
-    def forward(self, inputs, targets, alpha=0, gamma=2, smooth=1):
+    def forward(self, inputs, targets, alpha=None, gamma=2, smooth=1):
         inputs = inputs.float()
         targets = targets.float()
         
+        BCE = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
         #comment out if your model contains a sigmoid or equivalent activation layer
         inputs = F.sigmoid(inputs)       
         
@@ -140,7 +141,6 @@ class FocalDiceBCELoss(nn.Module):
         targets = targets.view(-1)
         
         #first compute binary cross-entropy 
-        BCE = F.binary_cross_entropy(inputs, targets, reduction='none')
         BCE_EXP = torch.exp(-BCE)
         focal_loss = (1-BCE_EXP)**gamma * BCE
         if alpha is not None:

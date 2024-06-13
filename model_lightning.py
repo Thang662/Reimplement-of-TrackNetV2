@@ -44,6 +44,7 @@ class LitTrackNetV2(L.LightningModule):
         logits = self.net(imgs)
 
         loss = self.loss_fn(logits, heatmaps)
+        print(f'Focal Loss: {loss}, Focal Loss v2: {FocalLossv2()(logits, heatmaps)}, Dice Loss: {DiceLoss()(logits, heatmaps)}, Dice BCE Loss: {DiceBCELoss()(logits, heatmaps)}, Focal Dice BCE Loss: {FocalDiceBCELoss()(logits, heatmaps)}, Focal Dice Loss: {FocalDiceLoss()(logits, heatmaps)}, Focal BCE Loss: {FocalBCELoss()(logits, heatmaps)}')
 
         probs = torch.sigmoid(logits)
         preds = (probs > 0.5).float()
