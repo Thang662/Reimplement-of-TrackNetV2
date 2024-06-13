@@ -9,10 +9,10 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from lightning.pytorch.callbacks import RichProgressBar, LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 from functools import partial
+from loss import *
 # import data_setup, train, model_builder, utils
 # from train import *
 # from utils import *
-# from loss import *
 
 def get_opt():
     parser = argparse.ArgumentParser(description='Train a TrackNetV2 model')
@@ -43,6 +43,7 @@ def get_opt():
     parser.add_argument('--train_transform', action='store_true', help='Transforms for training data')
     parser.add_argument('--h', type=int, default=288, help='Height of the image')
     parser.add_argument('--w', type=int, default=512, help='Width of the image')
+    parser.add_argument('--loss_fn', choices=['focal', 'focal_dice', 'focal_bce', 'dice', 'dice_bce', 'focal_dice_bce'], default='focal', help='Loss function to use')
     opt = parser.parse_args()
     return opt
 
@@ -101,10 +102,23 @@ if __name__ == "__main__":
     else:
         scheduler = None
 
-    if opt.weight_init:
-        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, weight_init = weight_init, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler)
+    if opt.loss_fn == 'focal':
+        loss_fn = FocalLoss()
+    elif opt.loss_fn == 'focal_dice':
+        loss_fn = FocalDiceLoss()
+    elif opt.loss_fn == 'focal_bce':
+        loss_fn = FocalBCELoss()
+    elif opt.loss_fn == 'dice':
+        loss_fn = DiceLoss()
+    elif opt.loss_fn == 'dice_bce':
+        loss_fn = DiceBCELoss()
     else:
-        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler)
+        loss_fn = FocalDiceBCELoss()
+
+    if opt.weight_init:
+        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, weight_init = weight_init, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler, loss_fn = loss_fn)
+    else:
+        model = LitTrackNetV2(frame_in = opt.frame_in * 3, frame_out = opt.frame_in, optimizer = optimizer, log_image_every_n_steps = opt.log_image_every_n_steps, lr = opt.learning_rate, scheduler = scheduler, loss_fn = loss_fn)
 
 
     # fast_dev_run = True for testing purposes

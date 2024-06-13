@@ -27,7 +27,156 @@ class FocalLoss(nn.Module):
         elif self.reduction == 'sum':
             loss = loss.sum()
         return loss
+    
+class FocalBCELoss(nn.Module):
+    def __init__(self, gamma = 2, alpha = None, reduction = 'mean'):
+        super(FocalBCELoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = reduction
 
+    def forward(self, input, target):
+        input = input.float()
+        target = target.float()
+        p = torch.sigmoid(input)
+        ce_loss = F.binary_cross_entropy_with_logits(input, target, reduction = 'none')
+        p_t = p * target + (1 - p) * (1 - target)
+        loss = ce_loss * ((1 - p_t) ** self.gamma)
+
+        if self.alpha is not None:
+            alpha_t = self.alpha * target + (1 - self.alpha) * (1 - target)
+            loss = alpha_t * loss
+        
+        if self.reduction == 'mean':
+            loss = loss.mean()
+        elif self.reduction == 'sum':
+            loss = loss.sum()
+        return loss + ce_loss.mean()
+
+class DiceLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(DiceLoss, self).__init__()
+
+    def forward(self, inputs, targets, smooth=1):
+        inputs = inputs.float()
+        targets = targets.float()
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = F.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        intersection = (inputs * targets).sum()                            
+        dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+        
+        return 1 - dice
+
+class DiceBCELoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(DiceBCELoss, self).__init__()
+
+    def forward(self, inputs, targets, smooth=1):
+        inputs = inputs.float()
+        targets = targets.float()
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = F.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        intersection = (inputs * targets).sum()                            
+        dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+        BCE = F.binary_cross_entropy(inputs, targets, reduction='mean')
+        Dice_BCE = BCE + dice_loss
+        
+        return Dice_BCE
+    
+class FocalDiceLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(FocalDiceLoss, self).__init__()
+
+    def forward(self, inputs, targets, alpha=0, gamma=2, smooth=1):
+        inputs = inputs.float()
+        targets = targets.float()
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = F.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        #first compute binary cross-entropy 
+        BCE = F.binary_cross_entropy(inputs, targets, reduction='none')
+        BCE_EXP = torch.exp(-BCE)
+        focal_loss = (1-BCE_EXP)**gamma * BCE
+        if alpha is not None:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            focal_loss = alpha_t * focal_loss
+        
+        intersection = (inputs * targets).sum()                            
+        dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+        FocalDice = focal_loss.mean() + dice_loss
+        
+        return FocalDice
+    
+class FocalDiceBCELoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(FocalDiceBCELoss, self).__init__()
+
+    def forward(self, inputs, targets, alpha=0, gamma=2, smooth=1):
+        inputs = inputs.float()
+        targets = targets.float()
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = F.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        #first compute binary cross-entropy 
+        BCE = F.binary_cross_entropy(inputs, targets, reduction='none')
+        BCE_EXP = torch.exp(-BCE)
+        focal_loss = (1-BCE_EXP)**gamma * BCE
+        if alpha is not None:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            focal_loss = alpha_t * focal_loss
+        
+        intersection = (inputs * targets).sum()                            
+        dice_loss = 1 - (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)  
+        FocalDiceBCE = focal_loss.mean() + dice_loss + BCE.mean()
+        
+        return FocalDiceBCE
+
+class FocalLossv2(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(FocalLossv2, self).__init__()
+
+    def forward(self, inputs, targets, alpha=0, gamma=2, smooth=1):
+        inputs = inputs.float()
+        targets = targets.float()
+        
+        #comment out if your model contains a sigmoid or equivalent activation layer
+        inputs = F.sigmoid(inputs)       
+        
+        #flatten label and prediction tensors
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+        
+        #first compute binary cross-entropy 
+        BCE = F.binary_cross_entropy(inputs, targets, reduction='none')
+        BCE_EXP = torch.exp(-BCE)
+        focal_loss = (1-BCE_EXP)**gamma * BCE
+        if alpha is not None:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            focal_loss = alpha_t * focal_loss
+                       
+        return focal_loss.mean()
 
 # class FocalLoss(nn.Module):
 #     def __init__(self, gamma=0, alpha=None, size_average=True):
