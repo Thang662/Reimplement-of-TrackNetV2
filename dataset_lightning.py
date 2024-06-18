@@ -1,7 +1,7 @@
 from dataset import *
 import lightning as L
 class TennisDataModule(L.LightningDataModule):
-    def __init__(self, root, frame_in, is_sequential, train_transform = None, test_transform = None, train_games = [i for i in range(1, 9)], r = 2.5, w = 512, h = 288, batch_size = 2, num_workers = 2, shuffle = True):
+    def __init__(self, root, frame_in, is_sequential, train_transform = None, test_transform = None, train_games = [i for i in range(1, 8)], r = 2.5, w = 512, h = 288, batch_size = 2, num_workers = 2, shuffle = True):
         super().__init__()
         self.root = Path(root)
         self.train_transform = train_transform
