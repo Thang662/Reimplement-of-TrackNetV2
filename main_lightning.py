@@ -172,10 +172,10 @@ if __name__ == "__main__":
     checkpoint_callback = ModelCheckpoint(
         save_last = True,
         save_top_k = 10,
-        monitor = "val_mIoU",
+        monitor = "val_f1",
         mode = "max",
         dirpath = "models",
-        filename =  opt.model_name + "-{epoch:02d}-{val_mIoU:.2f}",
+        filename =  opt.model_name + "-{epoch:02d}-{val_f1:.2f}",
     )
 
     # log learning rate
